@@ -1,5 +1,6 @@
 require 'optparse'
 require 'premailer'
+require 'nokogiri'
 
 # defaults
 options = {
@@ -27,9 +28,13 @@ opts = OptionParser.new do |opts|
   opts.on("--mode MODE", [:html, :txt], "Output: html or txt") do |v|
     mode = v
   end
-
+  
   opts.on("-b", "--base-url STRING", String, "Base URL, useful for local files") do |v|
     options[:base_url] = v
+  end
+
+  opts.on("--selector STRING", String, "Only return html with the given CSS selector") do |v|
+    options[:selector] = v
   end
 
   opts.on("-q", "--query-string STRING", String, "Query string to append to links") do |v|
@@ -90,7 +95,11 @@ end
 if mode == :txt
   print premailer.to_plain_text
 else
-  print premailer.to_inline_css
+  document = premailer.to_inline_css
+  if options[:selector]
+    document = Nokogiri::HTML(document).css(options[:selector]).first.to_s
+  end
+  print document
 end
 
 exit
